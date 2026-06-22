@@ -1,0 +1,14 @@
+/vendor/
+/composer.lock
+
+# IDE / tooling
+/.idea/
+
+# Caches
+.phpunit.result.cache
+/.phpstan-cache/
+.php-cs-fixer.cache
+
+# OS
+.DS_Store
+Thumbs.db
