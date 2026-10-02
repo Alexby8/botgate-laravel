@@ -8,16 +8,24 @@
 
 ## Требования
 
-- PHP `^8.2`
-- Laravel `^11`
+- Laravel `^11.0 || ^12.0 || ^13.0`.
+- PHP `^8.2` для Laravel 11/12; PHP `^8.3` для Laravel 13.
+
+Поддержка Laravel 13 добавлена в `botgate/laravel` 1.1.0. Для Laravel 11/12
+минимальная версия PHP не повышается. Composer проверяет требования выбранной
+версии Laravel вместе с требованиями пакета.
 
 ## Установка
 
 ```bash
-composer require botgate/laravel
+composer require botgate/laravel:^1.1
 ```
 
 Сервис-провайдер и фасад регистрируются автоматически (package auto-discovery).
+
+Если пакет уже установлен, обновите ограничение версии той же командой.
+Независимый пакет `botgate/sdk` устанавливается как зависимость; для поддержки
+Laravel 13 отдельный выпуск PHP SDK не требуется.
 
 Опубликуйте конфигурацию:
 
@@ -103,6 +111,50 @@ $this->app->bind(HttpClientInterface::class, function () {
 ## Конфигурация
 
 Все параметры находятся в `config/botgate.php` и читаются из `BOTGATE_*` переменных окружения. Маршрут, middleware и имя заголовка подписи также настраиваются в секции `webhook`.
+
+## Разработка и проверки
+
+```bash
+composer install
+composer test
+composer analyse
+vendor/bin/pint --test
+```
+
+В Windows используйте PHP 8.5 через `php85`, в том числе для запуска Composer,
+если обычная команда `php` указывает на другую версию интерпретатора.
+
+Интеграционные тесты используют Orchestra Testbench: 9.x для Laravel 11,
+10.x для Laravel 12 и 11.x для Laravel 13. Они проверяют контейнер, фасад,
+публикацию конфигурации, пользовательский HTTP-транспорт и приём подписанного
+webhook. Внешние запросы к Telegram в тестах не выполняются.
+
+Для проверки отдельной ветки зависимостей можно временно выбрать Testbench:
+
+```bash
+composer update --with="orchestra/testbench:^9.0" --with-all-dependencies
+composer test
+composer update --with="orchestra/testbench:^10.0" --with-all-dependencies
+composer test
+composer update --with="orchestra/testbench:^11.0" --with-all-dependencies
+composer test
+```
+
+`composer.lock` не публикуется с библиотекой. Потребитель устанавливает
+совместимые версии по своему lock-файлу и ограничениям Composer.
+
+## Выпуск версии
+
+Версия определяется Git-тегом; поле `version` в `composer.json` не нужно.
+Для выпуска поддержки Laravel 13 используйте тег `v1.1.0` на проверенном
+коммите и отправьте коммит вместе с тегом в `origin`.
+
+Packagist обновляет пакет по push-событию, если для репозитория настроен
+webhook. После отправки проверьте появление `v1.1.0` на странице
+[botgate/laravel](https://packagist.org/packages/botgate/laravel).
+Если автоматическое обновление не произошло, владелец пакета может нажать
+Update на Packagist. Публикуйте документацию сайта с требованием `^1.1`
+после появления этой версии в каталоге.
 
 ## Лицензия
 
