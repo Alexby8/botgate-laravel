@@ -6,6 +6,7 @@ namespace BotGate\Laravel\Tests;
 
 use BotGate\Client;
 use BotGate\Config;
+use BotGate\Exception\TelegramException;
 use BotGate\Http\HttpClientInterface;
 use BotGate\Http\HttpRequest;
 use BotGate\Http\HttpResponse;
@@ -60,6 +61,34 @@ final class ServiceProviderTest extends TestCase
         self::assertSame('https://bot-gate.ru/api/v1/bots/test-bot/sendMessage', $transport->request->uri);
         self::assertSame('Bearer test-api-key', $transport->request->headers['Authorization']);
         self::assertSame(['chat_id' => 123, 'text' => 'Test'], $transport->request->json);
+    }
+
+    public function test_facade_exposes_telegram_error_parameters_from_sdk_1_1(): void
+    {
+        if (! method_exists(TelegramException::class, 'retryAfter')) {
+            self::markTestSkipped('Telegram error parameters require botgate/sdk 1.1 or newer.');
+        }
+
+        $transport = new class implements HttpClientInterface
+        {
+            public function send(HttpRequest $request): HttpResponse
+            {
+                return new HttpResponse(400, [], Utils::streamFor(
+                    '{"ok":false,"error_code":429,"description":"Too Many Requests","parameters":{"retry_after":12}}',
+                ));
+            }
+        };
+        $this->app->instance(HttpClientInterface::class, $transport);
+
+        try {
+            BotGate::bot('test-bot')->call('sendMessage', ['chat_id' => 123, 'text' => 'Test']);
+            self::fail('A TelegramException was expected.');
+        } catch (TelegramException $error) {
+            self::assertSame(400, $error->httpStatusCode());
+            self::assertSame(429, $error->telegramErrorCode());
+            self::assertSame(['retry_after' => 12], $error->parameters());
+            self::assertSame(12, $error->retryAfter());
+        }
     }
 
     public function test_configuration_can_be_published(): void

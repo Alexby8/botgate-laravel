@@ -66,6 +66,12 @@ BotGate::client(); // BotGate\Client
 BotGate::config(); // BotGate\Config
 ```
 
+## Ошибки API
+
+Фасад передаёт исключения PHP SDK без преобразования. При `botgate/sdk` 1.1.0 и новее лимит BotGate даёт `RateLimitException`, а ошибка Telegram — `TelegramException` с методами `telegramErrorCode()`, `parameters()` и `retryAfter()`. Пример — в [README SDK](https://github.com/Alexby8/botgate-php-sdk#обработка-ошибок).
+
+В существующем проекте проверьте `composer show botgate/sdk`; обновить зависимость можно через `composer update botgate/sdk --with-dependencies`. Если повторы выполняет очередь, задайте `BOTGATE_RETRY_MAX=0` и планируйте следующую попытку по времени из исключения.
+
 ## Вебхук
 
 Пакет регистрирует маршрут `POST` по пути из `botgate.webhook.path` (по умолчанию `/botgate/webhook`, имя маршрута `botgate.webhook`). На маршрут навешивается middleware `VerifyBotGateSignature`, который проверяет заголовок `X-BotGate-Signature` по секрету `BOTGATE_WEBHOOK_SECRET`. При неверной подписи возвращается `403`.
